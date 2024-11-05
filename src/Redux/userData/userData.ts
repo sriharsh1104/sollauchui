@@ -3,8 +3,8 @@ import { createSlice } from "@reduxjs/toolkit";
 
 // InitialState for userData
 const initialState: any = {
-  name: "",
   firstName: "",
+  walletAddress:"",
 };
 
 // UserData SLICE
@@ -14,9 +14,14 @@ export const userDataSlice = createSlice({
   reducers: {
     resetAuthenticationDataSlice: (state, action) => {
       state.firstName = "";
+      state.walletAddress = "";
+
     },
     setFirstName: (state, action) => {
       state.firstName = action.payload;
+    },
+    setWalletAddress: (state, action) => {
+      state.walletAddress = action.payload;
     },
   },
 });
@@ -24,5 +29,6 @@ export const userDataSlice = createSlice({
 export const {
   resetAuthenticationDataSlice,
   setFirstName,
+  setWalletAddress,
 } = userDataSlice.actions;
 export default userDataSlice.reducer;
