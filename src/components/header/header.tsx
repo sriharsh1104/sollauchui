@@ -102,7 +102,7 @@ const Header: React.FC = () => {
 
   return (
     <header>
-      <h1>Trading Platform</h1>
+      <h1>Token Sale Platform</h1>
       {walletAddress ? (
         <div className="connected-info">
           <span onClick={() => setShowDisconnectModal(true)}>
