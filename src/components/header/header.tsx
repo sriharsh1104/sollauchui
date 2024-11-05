@@ -1,8 +1,8 @@
 // components/Header/Header.tsx
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Connection, PublicKey, clusterApiUrl } from "@solana/web3.js";
-import { AnchorProvider, Program } from "@project-serum/anchor";
+import { AnchorProvider } from "@project-serum/anchor";
 import "./header.css";
 
 const Header: React.FC = () => {
@@ -10,6 +10,38 @@ const Header: React.FC = () => {
   const [walletAddress, setWalletAddress] = React.useState<string | null>(null);
   const [showDisconnectModal, setShowDisconnectModal] = React.useState(false);
   const [provider, setProvider] = React.useState<AnchorProvider | null>(null);
+
+  useEffect(() => {
+    const connectWalletOnLoad = async () => {
+      if ("solana" in window) {
+        const provider = (window as any).solana;
+
+        if (provider.isPhantom) {
+          const { publicKey } = await provider.connect({
+            onlyIfTrusted: true,
+          });
+          if (publicKey) {
+            const address = publicKey.toString();
+            console.log("aaaaa",address)
+            setWalletAddress(address);
+
+            // Set up the Anchor provider
+            const connection = new Connection(
+              clusterApiUrl("devnet"),
+              "confirmed"
+            );
+            const anchorProvider = new AnchorProvider(connection, provider, {
+              commitment: "confirmed",
+            });
+            setProvider(anchorProvider);
+          }
+        }
+      }
+    };
+
+    // Check if wallet is already connected on load
+    connectWalletOnLoad();
+  }, []);
 
   const handleWalletConnect = async () => {
     try {
@@ -42,16 +74,29 @@ const Header: React.FC = () => {
     }
   };
 
-  const handleWalletDisconnect = () => {
-    setWalletAddress(null);
-    setProvider(null);
-    setShowDisconnectModal(false);
+  const handleWalletDisconnect = async () => {
+    if ("solana" in window) {
+      const provider = (window as any).solana;
+
+      if (provider.isPhantom) {
+        try {
+          await provider.disconnect();
+          console.log("Wallet disconnected");
+          setWalletAddress(null); // Clear wallet address immediately
+          setProvider(null); // Clear provider
+        } catch (error) {
+          console.error("Error during wallet disconnect:", error);
+        }
+      }
+    }
+
+    setShowDisconnectModal(false); // Close disconnect modal
   };
 
   const handleCopyAddress = () => {
     if (walletAddress) {
       navigator.clipboard.writeText(walletAddress);
-      //   alert("Wallet address copied to clipboard!");
+      // alert("Wallet address copied to clipboard!");
     }
   };
 
