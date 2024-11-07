@@ -1,8 +1,8 @@
-// components/Header/Header.tsx
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Connection, PublicKey, clusterApiUrl } from "@solana/web3.js";
+import { Connection, PublicKey, clusterApiUrl, Keypair } from "@solana/web3.js";
 import { AnchorProvider } from "@project-serum/anchor";
+import { createMint, TOKEN_PROGRAM_ID } from "@solana/spl-token"; // Correct import for SPL token
 import "./header.css";
 
 const Header: React.FC = () => {
@@ -22,7 +22,7 @@ const Header: React.FC = () => {
           });
           if (publicKey) {
             const address = publicKey.toString();
-            console.log("aaaaa",address)
+            console.log("aaaaa", address);
             setWalletAddress(address);
 
             // Set up the Anchor provider
@@ -47,6 +47,7 @@ const Header: React.FC = () => {
     try {
       if ("solana" in window) {
         const provider = (window as any).solana;
+        console.log("providerconnect", provider);
 
         if (provider.isPhantom) {
           const response = await provider.connect();
@@ -96,7 +97,42 @@ const Header: React.FC = () => {
   const handleCopyAddress = () => {
     if (walletAddress) {
       navigator.clipboard.writeText(walletAddress);
-      // alert("Wallet address copied to clipboard!");
+    }
+  };
+
+  // Function to create SPL token
+  const createToken = async () => {
+    console.log("provider", provider);
+
+    if (!provider || !walletAddress) {
+      alert("Please connect your wallet first.");
+      return;
+    }
+
+    try {
+      const mintAuthority = new PublicKey(walletAddress);
+      console.log("walletaddressinside", walletAddress.toString());
+      const connection = provider.connection;
+      const wallet = provider.wallet as any;
+      console.log('wallet', provider)
+      const keypair = Keypair.generate();
+      const token = await createMint(
+        connection,
+        wallet, // Use the Keypair as the signer
+        mintAuthority,
+        null, // freezeAuthority, null if no freeze authority is set
+        9, // Decimals for token (e.g., 9 is typical for tokens)
+        // TOKEN_PROGRAM_ID
+        keypair, // Keypair for the mint (created automatically)
+      { commitment: "confirmed" }, // Confirm options (optional)
+      TOKEN_PROGRAM_ID // Use the standard token program ID
+      );
+
+      console.log("Token created:", token.toString());
+      alert(`Token created with address: ${token.toString()}`);
+    } catch (error) {
+      console.error("Error creating token:", error);
+      alert("Failed to create token. See console for more details.");
     }
   };
 
@@ -106,11 +142,13 @@ const Header: React.FC = () => {
       {walletAddress ? (
         <div className="connected-info">
           <span onClick={() => setShowDisconnectModal(true)}>
-            Connected: {walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}
+            Connected: {walletAddress}
           </span>
           <button className="copy-button" onClick={handleCopyAddress}>
             Copy Address
           </button>
+          <button onClick={createToken}>Create SPL Token</button>{" "}
+          {/* Add button to create token */}
         </div>
       ) : (
         <button onClick={handleWalletConnect}>Wallet Connect</button>
